@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import TextField from "@mui/material/TextField";
 import Paper from "@mui/material/Paper";
 import Button from "@mui/material/Button";
@@ -8,11 +8,12 @@ import "easymde/dist/easymde.min.css";
 import styles from "./AddPost.module.scss";
 import { useSelector } from "react-redux";
 import { selectIsAuth } from "../../redux/slices/auth";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import axios from "../../axios";
 
 export const AddPost = () => {
 	const navigate = useNavigate();
+	const { id } = useParams();
 	const isAuth = useSelector(selectIsAuth);
 	const [text, setText] = useState("");
 	const [title, setTitle] = useState("");
@@ -21,7 +22,7 @@ export const AddPost = () => {
 	const inputFileRef = useRef(null);
 	const [imageUrl, setImageUrl] = useState("");
 
-	console.log(tags);
+	const isEditing = Boolean(id);
 
 	const handleChangeFile = async (event) => {
 		try {
@@ -53,21 +54,39 @@ export const AddPost = () => {
 			const fields = {
 				title,
 				imageUrl,
-				tags: tags.split(","),
+				tags,
 				text,
 			};
 
-			const { data } = await axios.post("./posts", fields);
+			const { data } = isEditing
+				? await axios.patch(`./posts/${id}`, fields)
+				: await axios.post("./posts", fields);
 
-			const id = data._id;
+			const _id = isEditing ? id : data._id;
 
-			navigate(`/posts/${id}`);
+			navigate(`/posts/${_id}`);
 		} catch (error) {
 			console.warn(error);
-			console.log(error);
 			alert("error when creating a post");
 		}
 	};
+
+	useEffect(() => {
+		if (id) {
+			axios
+				.get(`/posts/${id}`)
+				.then(({ data }) => {
+					setTitle(data.title);
+					setText(data.text);
+					setImageUrl(data.imageUrl);
+					setTags(data.tags.join(","));
+				})
+				.catch((err) => {
+					console.warn(err);
+					alert("error");
+				});
+		}
+	}, []);
 
 	const options = React.useMemo(
 		() => ({
@@ -144,11 +163,11 @@ export const AddPost = () => {
 			/>
 			<div className={styles.buttons}>
 				<Button onClick={onSubmit} size="large" variant="contained">
-					To publish
+					{isEditing ? "Save" : "To publish"}
 				</Button>
-				<a href="/">
+				<Link to="/">
 					<Button size="large">Cancel</Button>
-				</a>
+				</Link>
 			</div>
 		</Paper>
 	);

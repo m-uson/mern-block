@@ -30,14 +30,12 @@ export const Login = () => {
 	const onSubmit = async (value) => {
 		const data = await dispatch(fetchAuth(value));
 
-		// if (!data.payload) {
-		// 	return alert("failed to log in");
-		// }
+		if (!data.payload) {
+			return alert("failed to log in");
+		}
 
 		if ("token" in data.payload) {
 			window.localStorage.setItem("token", data.payload.token);
-		} else {
-			alert("failed to log in");
 		}
 	};
 

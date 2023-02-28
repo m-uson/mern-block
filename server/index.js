@@ -86,6 +86,8 @@ app.patch(
 	PostController.update
 );
 
+app.delete("/posts/:id/", checkAuth, PostController.remove);
+
 app.listen(4444, (err) => {
 	if (err) {
 		return console.log(err);
